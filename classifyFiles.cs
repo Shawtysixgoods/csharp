@@ -145,8 +145,8 @@ class Program
         organizer.Run(dir);
         using var watcher = new FileSystemWatcher(dir);
 
-
-        watcher.Created += (s, a) =>
+       
+        watcher.Changed += (s, a) =>
         {
             (var moved, var skipped) = organizer.Run(dir);
             Console.WriteLine("Перемещено: " + moved);
