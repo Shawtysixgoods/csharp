@@ -16,10 +16,18 @@ class FileRules
     {
         return new Dictionary<string, string>()
         {
-            [".png"] = "Images", [".jpeg"] = "Images", [".jpg"] = "Images",
-            [".mov"] = "Videos", [".mp4"] = "Videos", [".gif"] = "Videos",
-            [".rar"] = "Archives", [".zip"] = "Archives", [".7z"] = "Archives",
-            [".doc"] = "Documents", [".docx"] = "Documents", [".odt"] = "Documents",
+            [".png"] = "Images",
+            [".jpeg"] = "Images",
+            [".jpg"] = "Images",
+            [".mov"] = "Videos",
+            [".mp4"] = "Videos",
+            [".gif"] = "Videos",
+            [".rar"] = "Archives",
+            [".zip"] = "Archives",
+            [".7z"] = "Archives",
+            [".doc"] = "Documents",
+            [".docx"] = "Documents",
+            [".odt"] = "Documents",
             [".txt"] = "Documents",
         };
     }
@@ -31,7 +39,7 @@ class FileClassify
     // 1. Получить расширение файла
     // 2. Если файл не поддерживается - пропустить его и вернуть null
     // 3. Если файл поддерживается - возвращаем его название
-    
+
     private readonly FileRules _rules;
 
     public FileClassify(FileRules rules) => _rules = rules;
@@ -75,80 +83,77 @@ class FileMover
                 count++;
                 currentFilePath = Path.Combine(path, filename + $" ({count})" + extension);
             } while (File.Exists(currentFilePath));
-
-            File.Move(source, currentFilePath);
         }
+
+        File.Move(source, currentFilePath);
+    }
+}
+
+class FileOrganizer
+{
+    private readonly FileClassify _classify;
+
+    private readonly FileMover _mover;
+
+
+    public FileOrganizer(FileRules rules, string rootDir)
+    {
+        _classify = new FileClassify(rules);
+
+        _mover = new FileMover(rootDir);
     }
 
-    class FileOrganizer
+    public (int moved, int skipped) Run(string dir)
     {
-        private readonly FileClassify _classify;
+        // Получаем все файлы
+        // Небольшую статистику
+        // Классифицировать каждый файл
+        // Перемещать файл физически
+        // Вернуть данные обратно
 
-        private readonly FileMover _mover;
+        var files = Directory.GetFiles(dir);
 
+        int moved = 0;
+        int skipped = 0;
 
-        public FileOrganizer(FileRules rules, string rootDir)
+        foreach (var file in files)
         {
-            _classify = new FileClassify(rules);
+            var folder = _classify.Classify(file);
 
-            _mover = new FileMover(rootDir);
-        }
-
-        public (int moved, int skipped) Run(string dir)
-        {
-            // Получаем все файлы
-            // Небольшую статистику
-            // Классифицировать каждый файл
-            // Перемещать файл физически
-            // Вернуть данные обратно
-
-            var files = Directory.GetFiles(dir);
-
-            int moved = 0;
-            int skipped = 0;
-
-            foreach (var file in files)
+            if (folder != null)
             {
-                var folder = _classify.Classify(file);
-
-                if (folder != null)
-                {
-                    _mover.Move(file, folder);
-                    moved++;
-                }
-                else
-                {
-                    skipped++;
-                }
+                _mover.Move(file, folder);
+                moved++;
             }
-
-            return (moved, skipped);
-        }
-    }
-
-
-    class Program
-    {
-
-
-        static void Main()
-        {
-            string dir = Directory.GetCurrentDirectory();
-
-            var organizer = new FileOrganizer(new FileRules(), dir);
-
-            using var watcher = new FileSystemWatcher(dir);
-
-
-            watcher.Created += (s, a) =>
+            else
             {
-                (var moved, var skipped) = organizer.Run(dir);
-                Console.WriteLine("Перемещено: " + moved);
-                Console.WriteLine("Пропущено: " + skipped);
-            };
-
-            watcher.EnableRaisingEvents = true;
-            Console.ReadLine();
+                skipped++;
+            }
         }
+
+        return (moved, skipped);
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        string dir = "C:\\Users\\dyubanov_b\\Downloads";
+
+        var organizer = new FileOrganizer(new FileRules(), dir);
+        organizer.Run(dir);
+        using var watcher = new FileSystemWatcher(dir);
+
+
+        watcher.Created += (s, a) =>
+        {
+            (var moved, var skipped) = organizer.Run(dir);
+            Console.WriteLine("Перемещено: " + moved);
+            Console.WriteLine("Пропущено: " + skipped);
+        };
+
+        watcher.EnableRaisingEvents = true;
+        Console.ReadLine();
     }
 }
