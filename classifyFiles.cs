@@ -56,78 +56,99 @@ class FileMover
     public void Move(string source, string target)
     {
         string path = Path.Combine(root, target); // Конкретная папка для файла
-
         Directory.CreateDirectory(path);
 
         // Если у нас в Donwloads есть файл точно таким же названием
         // Как и в папке Videos, то мы должны для нового файла добавлять что-то в название
-        
-        string currentFile = Path.Combine(path, Path.GetFileName(source));
 
-        if (File.Exists(currentFile)) {
-            source += "_1";
+        string currentFilePath = Path.Combine(path, Path.GetFileName(source));
+
+        if (File.Exists(currentFilePath))
+        {
+            string filename = Path.GetFileNameWithoutExtension(currentFilePath);
+            string extension = Path.GetExtension(currentFilePath);
+
+            int count = 0;
+
+            do
+            {
+                count++;
+                currentFilePath = Path.Combine(path, filename + $" ({count})" + extension);
+            } while (File.Exists(currentFilePath));
+
+            File.Move(source, currentFilePath);
+        }
+    }
+
+    class FileOrganizer
+    {
+        private readonly FileClassify _classify;
+
+        private readonly FileMover _mover;
+
+
+        public FileOrganizer(FileRules rules, string rootDir)
+        {
+            _classify = new FileClassify(rules);
+
+            _mover = new FileMover(rootDir);
         }
 
-        File.Move(source, path);
-    }
-}
+        public (int moved, int skipped) Run(string dir)
+        {
+            // Получаем все файлы
+            // Небольшую статистику
+            // Классифицировать каждый файл
+            // Перемещать файл физически
+            // Вернуть данные обратно
 
-class FileOrganizer
-{
-    private readonly FileClassify _classify;
+            var files = Directory.GetFiles(dir);
 
-    private readonly FileMover _mover;
+            int moved = 0;
+            int skipped = 0;
 
-
-    public FileOrganizer(FileRules rules, string rootDir)
-    {
-        _classify = new FileClassify(rules);
-
-        _mover = new FileMover(rootDir);
-    }
-
-    public (int moved, int skipped) Run(string dir)
-    {
-        // Получаем все файлы
-        // Небольшую статистику
-        // Классифицировать каждый файл
-        // Перемещать файл физически
-        // Вернуть данные обратно
-
-        var files = Directory.GetFiles(dir);
-
-        int moved = 0;
-        int skipped = 0;
-
-        foreach (var file in files) {
-            var folder = _classify.Classify(file);
-
-            if (folder != null)
+            foreach (var file in files)
             {
-                _mover.Move(file, folder);
-                moved++;
-            } else
-            {
-                skipped++;
+                var folder = _classify.Classify(file);
+
+                if (folder != null)
+                {
+                    _mover.Move(file, folder);
+                    moved++;
+                }
+                else
+                {
+                    skipped++;
+                }
             }
+
+            return (moved, skipped);
         }
-
-        return (moved, skipped);
     }
-}
 
 
-class Program
-{
-    static void Main()
+    class Program
     {
-        string dir = Directory.GetCurrentDirectory();
 
-        var organizer = new FileOrganizer(new FileRules(), dir);
 
-        (var moved, var skipped) = organizer.Run(dir);
+        static void Main()
+        {
+            string dir = Directory.GetCurrentDirectory();
 
-        Console.WriteLine("Перемещено: " + moved);
-        Console.WriteLine("Пропущено: " + skipped);
+            var organizer = new FileOrganizer(new FileRules(), dir);
+
+            using var watcher = new FileSystemWatcher(dir);
+
+
+            watcher.Created += (s, a) =>
+            {
+                (var moved, var skipped) = organizer.Run(dir);
+                Console.WriteLine("Перемещено: " + moved);
+                Console.WriteLine("Пропущено: " + skipped);
+            };
+
+            watcher.EnableRaisingEvents = true;
+            Console.ReadLine();
+        }
     }
 }
