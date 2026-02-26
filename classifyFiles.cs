@@ -1,126 +1,123 @@
-/// <summary>
-/// Написать анализатор файловой системы.
-/// Программа анализирует попадающие файлы и перемещает их по соответсвующим папкам.
-/// </summary>
+// Цель: Анализатор файловой системы
+// Программа работает в определенной папке.
+// Когда в папку попадает какой-то файл, программа распознает файл 
+// И отправляет в определенную папку. 
+
+// Вход: подаются файлы
+// Выход: Отсортированные по папкам файлы
 
 
-// Правила для расширений файлов 
-class FileRules {
-    public Dictionary<string, string> GetRules() { 
-        return new Dictionary<string, string>() {
-            [".png"] = "Images",    [".jpeg"] = "Images",        [".jpg"] = "Images",
-            [".doc"] = "Documents", [".docx"] = "Documents",     [".odt"] = "Documents",
-            [".txt"] = "Documents",
-            [".zip"] = "Archives",  [".rar"]  = "Archives",      [".7z"]  = "Archives",
-            [".mov"] = "Videos",    [".mp4"]  = "Videos",        [".gif"] = "Videos",
+// Поставить правила, с какими файлами мы работаем
+// Различать и понимать какой файл к нам попал
+// Физически переместить
+// Должен быть тот, который будет управлять всем этим процессам
+
+// FileRules - правила для файлов, с которыми мы работаем
+// FileClassify - он отвечает за различие файла, и куда он попадёт
+// FileMover - он отвечает за физическое перемещение файла
+// FileOrganizer - он отвечает за то, чтобы произвести работу над каждым файлом
+ 
+class FileRules 
+{
+    // Задаём правила на вход, с какими файлами работаем
+    // И куда попадёт каждый файл
+    public Dictionary<string, string> GetRules()
+    {
+        return new Dictionary<string, string>()
+        {
+            [".png"] = "Images", [".jpeg"] = "Images", [".jpg"] = "Images",
+            [".doc"] = "Documents", [".odt"] = "Documents", [".txt"] = "Documents",
+            [".zip"] = "Archive", [".7z"] = "Archive", [".rar"] = "Archive",
+            [".mp4"] = "Videos", [".mov"] = "Videos", [".gif"] = "Videos"
         };
     }
 }
-// Path - Класс предназначенный для работы с путями
-// File - Класс предназначенный для работы с файлами
-// Directory - Класс предназначенный для работы с папками
+// Path - Класс, для работы с путями
+// File - Класс, для работы с файлами
+// Directory - Класс, для работы с папками
 
-// Main -> (root) => FileOrganizer = (определяет все файлы) = FileClassify, FileMover
-
-// Различие и определения файла (то куда он попадёт)
-class FileClassify {
-
+// FileClassify - отвечает на распознавание, что за файл и куда попадёт
+class FileClassify
+{
+    // За классификацию (понять, что за файл) и куда он попадёт
     private FileRules rules;
-
-    public FileClassify(FileRules rules)
-    {
-        this.rules = rules;
-    }
-
+    public FileClassify(FileRules rules){ this.rules = rules; }
     public string? Classify(string source)
-    {   // Получить расширение файла
-        var ext = Path.GetExtension(source);
-
-        // Понять, работает ли наша программа с этим расширением
-        // 1. Понять, работает ли программа с этим расширением
-        // 2. Если да, создать переменную, которая содержит имя папки ( в которую попадёт наш файл )
-        // 3. Иначе, если наша программа с таким расширением не работает, вернуть null
-
-        // Получаем описанные правила, а далее создаём переменную.
-        // 
-        rules.GetRules().TryGetValue(ext, out string? folder);
-
-        return folder;
-        // Определить в какую папку попадает текущий файл
-    }
-}
-
-// За физическое перемещение файла
-class FileMover {
-    // Source - Абсолютный путь вместе с названием файла
-    // Target - это название папки.
-    private readonly string root;
-
-    public FileMover(string root){this.root = root; }
-
-    public void Move(string source, string target) {
-        // Вычисляем абсолютный путь папки (таргета)
-        var path = Path.Combine(root, target);
-        Directory.CreateDirectory(path);
-        // Вычисляем абсолютный путь файла, где он должен лежать
-        var currentPathFile = Path.Combine(path, Path.GetFileName(source));
-        Console.WriteLine(currentPathFile);
-        // Физически перемещаем файл
-        File.Move(source, currentPathFile);
-    }
-
-}
-
-class FileOrganizer { 
-
-    private readonly FileClassify fileClassify;
-
-    private readonly FileMover fileMover;
-
-    private readonly string root;
-
-    public FileOrganizer(string root)
     {
-        this.fileClassify = new FileClassify(new FileRules());
-        this.fileMover = new FileMover(root);
-        this.root = root;
-    }
+        string ext = Path.GetExtension(source);
+        // 1. Получить наши правила и сравнить, то расширение, которое есть
+        // С тем расширением, которое мы описались в правилах.
+        // 2. Если расширение в правилах указано - должны получить 
+        // и возвратить название папки, иначе вернуть - отсутствие правила
 
-    public (int, int) Run()
+        rules.GetRules().TryGetValue(ext, out string? Folder);
+        return Folder;
+    }
+}
+// Создаёт папку в которую должен попасть файл и физически его перемещает
+class FileMover
+{   // root - папка, в которой происходит работа программы
+    private string root; 
+
+    public FileMover(string root){ this.root = root; }
+    // source - это абсолютный путь файла, который мы должны переместить
+    // target - это название папки, куда он должен попасть source
+    public void Move(string source, string target)
+    {
+        // Сначала находим абсолютный путь папки, которую мы хотим создать
+        string path = Path.Combine(root, target);
+        // Создаём папку (если она есть, инструкция пропускается)
+        Directory.CreateDirectory(path);
+        // Я вычисляю имя файла (с расширением)
+        string filename = Path.GetFileName(source);
+        // Формирую абсолютный путь папки с названием файла
+        string pathFolder = Path.Combine(path, filename);
+        // Физически перемещаю файл
+        File.Move(source, pathFolder);
+    }
+}
+
+class FileOrganizer
+{
+    private FileClassify classify;
+    private FileMover mover;
+    private string root;
+    // Создаём объекты только при создании объекта FileOrganizer
+    public FileOrganizer(string dir, FileRules rules)
+    {
+        root = dir;
+        classify = new FileClassify(rules);
+        mover = new FileMover(dir);
+    }
+    public (int, int) Run() // Запускаем процесс классификации и перемещения файлов
     {
         var files = Directory.GetFiles(root);
 
-        int skipped = 0;
-        int moved = 0;
+        int skipped = 0, moved = 0;
 
-        foreach (var file in files)
-        {
-            
-            var target = fileClassify.Classify(file); // классифицируем
-            if(target != null)
+        foreach (var file in files) { 
+            var output = classify.Classify(file);
+            if (output != null)
             {
-                fileMover.Move(file, target); // Перемещаем
                 moved++;
-            } else {  skipped++; }
+                mover.Move(file, output);
+            }
+            else { skipped++; };
         }
 
         return (skipped, moved);
-
     }
-
 }
 
 class Program
 {
     static void Main()
     {
-        var dir = "C:\\Users\\dyubanov_b\\Downloads\\";
+        var dir = Directory.GetCurrentDirectory();
+        var organizer = new FileOrganizer(dir, new FileRules());
 
+        (int skipped, int moved) = organizer.Run();
 
-        var organizer = new FileOrganizer(dir);
-        (var skipped, var moved) = organizer.Run();
-
-        Console.WriteLine($"Было пропущено {skipped} файлов");
-        Console.WriteLine($"Было перемещено {moved} файлов");
+        Console.WriteLine($"Перемещено: {moved}, Пропущено: {skipped}");
     }
 }
