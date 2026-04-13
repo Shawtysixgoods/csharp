@@ -6,7 +6,7 @@ class HashKit(HashAlgorithm algo) {
     protected byte[] getBytes(string word) => Encoding.UTF8.GetBytes(word);
     protected string getString(byte[] bytes) => Convert.ToBase64String(bytes);
     protected byte[] getHash(byte[] bytes) => Algo.ComputeHash(bytes);
-    protected string GetHashWord(string word) => getString(getHash(getBytes(word)));
+    public string GetHashWord(string word) => getString(getHash(getBytes(word)));
 }
 
 class HashManager {
