@@ -30,7 +30,7 @@ class Program{
 
         HashManager manager = new HashManager();
         HashKit newHashAlgorithm = manager.GetHashAlgorithm(choice);
-        string hash = newHashAlgorithm.GetHashCode(word);
+        string hash = newHashAlgorithm.GetHashWord(word);
 
         Console.WriteLine(hash);
     }
