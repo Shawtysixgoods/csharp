@@ -24,7 +24,7 @@ class Program{
     static void Main()
     {
         Console.WriteLine("Выберите:\n\n1. MD5\n2. SHA1\n3. SHA256");
-        int choice = Console.ReadLine();
+        int choice = Parse.Int(Console.ReadLine());
         Console.Write("Введите строку: ");
         string word = Console.ReadLine();
 
