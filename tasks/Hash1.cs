@@ -2,10 +2,10 @@ using System.Security.Cryptography;
 using System.Text;
 
 class HashKit(HashAlgorithm algo) {
-    protected HashAlgorithm Algo {get; set;} = algo;
-    protected byte[] getBytes(string word) => Encoding.UTF8.GetBytes(word);
-    protected string getString(byte[] bytes) => Convert.ToBase64String(bytes);
-    protected byte[] getHash(byte[] bytes) => Algo.ComputeHash(bytes);
+    private HashAlgorithm Algo {get; set;} = algo;
+    private byte[] getBytes(string word) => Encoding.UTF8.GetBytes(word);
+    private string getString(byte[] bytes) => Convert.ToBase64String(bytes);
+    private byte[] getHash(byte[] bytes) => Algo.ComputeHash(bytes);
     public string GetHashWord(string word) => getString(getHash(getBytes(word)));
 }
 
@@ -13,9 +13,9 @@ class HashManager {
     public HashKit GetHashAlgorithm(int choice) {
         return choice switch
         {
-            1 => new HashKit(MD5.Create),
-            2 => new HashKit(SHA1.Create),
-            3 => new HashKit(SHA256.Create),
+            1 => new HashKit(MD5.Create()),
+            2 => new HashKit(SHA1.Create()),
+            3 => new HashKit(SHA256.Create()),
             _ => throw new ArgumentException("Неверный выбор алгоритма")
         };
     }
